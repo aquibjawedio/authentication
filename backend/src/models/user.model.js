@@ -1,4 +1,6 @@
 import mongoose from "mongoose";
+import bcrypt from "bcryptjs";
+
 import {
   AvailableUserRolesEnum,
   AvailableUserRoles,
@@ -95,6 +97,13 @@ const userSchema = new mongoose.Schema(
   },
   { timestamps: true, versionKey: false }
 );
+
+userSchema.pre("save", async function (next) {
+  if (this.isModified("password")) {
+    this.password = await bcrypt.hash(this.password, 10);
+  }
+  next();
+});
 
 const User = mongoose.model("User", userSchema);
 
