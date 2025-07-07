@@ -123,14 +123,28 @@ userSchema.methods.isPasswordCorrect = async function (password) {
 };
 
 userSchema.methods.generateAccessToken = function () {
-  return jwt.sign({ _id: this._id, role: this.role }, env.ACCESS_TOKEN_SECRET, {
-    expiresIn: env.ACCESS_TOKEN_EXPIRY,
-  });
+  return jwt.sign(
+    {
+      _id: this._id,
+      role: this.role,
+      username: this.username,
+      email: this.email,
+    },
+    env.ACCESS_TOKEN_SECRET,
+    {
+      expiresIn: env.ACCESS_TOKEN_EXPIRY,
+    },
+  );
 };
 
 userSchema.methods.generateRefreshToken = function () {
   return jwt.sign(
-    { _id: this._id, role: this.role },
+    {
+      _id: this._id,
+      role: this.role,
+      username: this.username,
+      email: this.email,
+    },
     env.REFRESH_TOKEN_SECRET,
     {
       expiresIn: env.REFRESH_TOKEN_EXPIRY,

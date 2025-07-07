@@ -7,7 +7,7 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { logger } from "../utils/logger.js";
 import { ApiError } from "../utils/ApiError.js";
-import { verifyJWT } from "../utils/jwt.js";
+import { clearCookieOptions, verifyJWTRefreshToken } from "../utils/jwt.js";
 
 export const registerUserController = asyncHandler(async (req, res) => {
   const { fullname, username, email, password } = registerUserSchema.parse(
@@ -28,7 +28,7 @@ export const registerUserController = asyncHandler(async (req, res) => {
 
 export const loginUserController = asyncHandler(async (req, res) => {
   if (req.cookies?.refreshToken) {
-    const decodedUser = verifyJWT(req.cookies.refreshToken);
+    const decodedUser = verifyJWTRefreshToken(req.cookies.refreshToken);
     if (decodedUser.role === "admin") {
       logger.info(
         `Admin is already logged in, but bypassing restriction ${decodedUser._id}`,
@@ -54,4 +54,18 @@ export const loginUserController = asyncHandler(async (req, res) => {
     .cookie("accessToken", accessToken, accessTokenOptions)
     .cookie("refreshToken", refreshToken, refreshTokenOptions)
     .json(new ApiResponse(201, "User registered successfully", { user }));
+});
+
+export const logoutUserController = asyncHandler(async (req, res) => {
+  const user = req.user;
+
+  const cookieSettings = clearCookieOptions();
+  res.clearCookie("accessToken", cookieSettings);
+  res.clearCookie("refreshToken", cookieSettings);
+
+  logger.info("Logged out successful: User logged out");
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, "User logged out successfully", { user }));
 });
