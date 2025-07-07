@@ -16,7 +16,10 @@
     "cors": "^2.8.5",
     "dotenv": "^17.0.1",
     "express": "^5.1.0",
+    "mailgen": "^2.0.29",
     "mongoose": "^8.16.1",
+    "nodemailer": "^7.0.5",
+    "resend": "^4.6.0",
     "winston": "^3.17.0",
     "zod": "^3.25.75"
   },

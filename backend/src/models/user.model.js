@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
+import crypto from "crypto";
 
 import {
   AvailableUserRolesEnum,
@@ -95,7 +96,7 @@ const userSchema = new mongoose.Schema(
     isDeleted: { type: Boolean, default: false },
     deletedAt: { type: Date },
   },
-  { timestamps: true, versionKey: false }
+  { timestamps: true, versionKey: false },
 );
 
 userSchema.pre("save", async function (next) {
@@ -104,6 +105,16 @@ userSchema.pre("save", async function (next) {
   }
   next();
 });
+
+userSchema.methods.generateTemporaryToken = function () {
+  const unHashedToken = crypto.randomBytes(32).toString("hex");
+  const hashedToken = crypto
+    .createHash("sha256")
+    .update(unHashedToken)
+    .digest("hex");
+  const tokenExpiry = Date.now() + 10 * 60 * 1000;
+  return { unHashedToken, hashedToken, tokenExpiry };
+};
 
 const User = mongoose.model("User", userSchema);
 
