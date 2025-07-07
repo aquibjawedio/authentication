@@ -1,0 +1,19 @@
+2025-07-07 13:46:43 [32minfo[39m: [32mSever is working fine[39m
+2025-07-07 13:46:55 [33mwarn[39m: [33mSever is working fine[39m
+2025-07-07 13:47:08 [36mdebug[39m: [36mSever is working fine[39m
+2025-07-07 13:47:20 [31merror[39m: [31mSever is working fine[39m
+2025-07-07 13:48:05 [32minfo[39m: [32mSever is working fine[39m
+2025-07-07 13:51:18 [32minfo[39m: [32mSever is working fine[39m
+2025-07-07 13:52:17 [36mdebug[39m: [36mSever is running[39m
+2025-07-07 13:53:17 [36mdebug[39m: [36mSever is running[39m
+2025-07-07 13:56:03 [31merror[39m: [31mSever is running[39m
+2025-07-07 13:57:20 [31merror[39m: [31mSever is running[39m
+{
+  "status": "OK",
+  "uptime": 3.111769989
+}
+2025-07-07 14:00:43 [31merror[39m: [31mSever is running[39m
+{
+  "status": "OK",
+  "uptime": 6.881548712
+}
