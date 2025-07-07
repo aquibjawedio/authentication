@@ -7,6 +7,7 @@ import {
   emailVerificationMailGenContent,
   sendEmail,
 } from "../utils/sendEmail.js";
+import { cookieOptions } from "../utils/jwt.js";
 
 export const registerUserService = async ({
   fullname,
@@ -79,4 +80,47 @@ export const registerUserService = async ({
   logger.info(`User created and verification email sent to ${user.email}`);
 
   return sanitizeUser(user);
+};
+
+export const loginUserService = async ({ email, password }) => {
+  logger.info(`Login attempt: ${email}`);
+
+  const user = await User.findOne({ email });
+  if (!user) {
+    logger.warn(`Login failed: User not found - ${email}`);
+    throw new ApiError(
+      400,
+      "User doesn't exists with this email, Please create your account first.",
+    );
+  }
+
+  if (!user.isEmailVerified) {
+    logger.warn(`Login failed: User email is not verified yet - ${email}`);
+    throw new ApiError(
+      403,
+      "Please verify your email with link sent on registered email.",
+    );
+  }
+
+  const isMatchedPassword = user.isPasswordCorrect(password);
+
+  if (!isMatchedPassword) {
+    logger.warn(`Login failed: Incorrect password for email - ${email}`);
+    throw new ApiError(401, "Invalid credentials, login failed.");
+  }
+
+  const accessToken = user.generateAccessToken();
+  const accessTokenOptions = cookieOptions(1000 * 60 * 15);
+  const refreshToken = user.generateRefreshToken();
+  const refreshTokenOptions = cookieOptions(1000 * 60 * 60 * 24 * 7);
+
+  logger.info(`Login successfull: User logged in successfully - ${email}`);
+
+  return {
+    user: sanitizeUser(user),
+    accessToken,
+    accessTokenOptions,
+    refreshToken,
+    refreshTokenOptions,
+  };
 };
