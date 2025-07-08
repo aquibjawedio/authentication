@@ -9,6 +9,7 @@ import {
 } from "../utils/sendEmail.js";
 import { cookieOptions } from "../utils/jwt.js";
 import crypto from "crypto";
+import { sendEmailVerificationLink } from "../utils/emailVerification.js";
 
 export const registerUserService = async ({
   fullname,
@@ -60,23 +61,7 @@ export const registerUserService = async ({
   }
   logger.info(`User created successfully with ID: ${user.id}`);
 
-  const { unHashedToken, hashedToken, tokenExpiry } =
-    user.generateTemporaryToken();
-
-  user.emailVerificationToken = hashedToken;
-  user.emailVerificationTokenExpiry = tokenExpiry;
-  await user.save();
-
-  logger.info(`Email verification token saved for user ID ${user._id}`);
-
-  const verificationUrl = `${env.FRONTEND_URL}/api/v1/auth/verify-email/${unHashedToken}`;
-
-  logger.info(`Sending verification link : ${verificationUrl}  at : ${email}`);
-  await sendEmail({
-    email,
-    subject: "Email Verification",
-    mailGenContent: emailVerificationMailGenContent(fullname, verificationUrl),
-  });
+  await sendEmailVerificationLink(user, user.email);
 
   logger.info(`User created and verification email sent to ${user.email}`);
 
@@ -171,6 +156,7 @@ export const refreshAccessTokenService = async (refreshToken) => {
     throw new ApiError(403, "Refresh token is required");
   }
 
+  logger.info(`Attemp to find user : Refresh token - ${refreshToken}`);
   const user = await User.findOne({
     "sessions.refreshToken": refreshToken,
     "sessions.isRevoked": false,
@@ -181,6 +167,7 @@ export const refreshAccessTokenService = async (refreshToken) => {
   );
 
   if (sessionIndex === -1) {
+    logger.warn("No session found or logged out");
     throw new ApiError(401, "Session not found or revoked");
   }
   user.sessions[sessionIndex].lastUsedAt = new Date();
@@ -205,4 +192,53 @@ export const refreshAccessTokenService = async (refreshToken) => {
     newRefreshToken,
     refreshTokenOptions,
   };
+};
+
+export const verifyEmailService = async (token) => {
+  logger.info(`Attemp to verify : Email verification token - ${token}`);
+  const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
+  const user = await User.findOne({ emailVerificationToken: hashedToken });
+  if (!user) {
+    logger.warn(`User not found : Invalid or expired token - ${hashedToken}`);
+    throw new ApiError(401, "User not found! Invalid or expired token.");
+  }
+
+  if (user.isEmailVerified) {
+    throw new ApiError(403, "User email is already verified.");
+  }
+
+  if (user.emailVerificationTokenExpiry < Date.now()) {
+    await sendEmailVerificationLink(user, user.email);
+    throw new ApiError(
+      400,
+      "Email verification token has expired. A new verification link has been sent.",
+    );
+  }
+
+  user.isEmailVerified = true;
+  user.emailVerificationToken = undefined;
+  user.emailVerificationTokenExpiry = undefined;
+  await user.save();
+
+  logger.info(`Email verified successfull : Login with - ${user.email}`);
+
+  return sanitizeUser(user);
+};
+
+export const resendVerificationEmailService = async (email) => {
+  logger.info(`Attempt to resend verification email: ${email}`);
+  const user = await User.findOne({ email });
+  if (!user) {
+    logger.warn(`User not found: No user exists with email - ${email}`);
+    throw new ApiError(404, "User not found with this email.");
+  }
+
+  if (user.isEmailVerified) {
+    logger.warn(`Email already verified: User email - ${email}`);
+    throw new ApiError(403, "User email is already verified.");
+  }
+
+  await sendEmailVerificationLink(user, user.email);
+  logger.info(`Verification email resent successfully to - ${email}`);
+  return sanitizeUser(user);
 };

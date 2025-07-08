@@ -1,9 +1,16 @@
-import { loginUserSchema, registerUserSchema } from "../schemas/auth.schema.js";
+import {
+  loginUserSchema,
+  registerUserSchema,
+  resendVerificationEmailSchema,
+  verifyEmailSchema,
+} from "../schemas/auth.schema.js";
 import {
   loginUserService,
   logoutUserService,
   refreshAccessTokenService,
   registerUserService,
+  resendVerificationEmailService,
+  verifyEmailService,
 } from "../services/auth.service.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
@@ -95,3 +102,26 @@ export const refreshAccessTokenController = asyncHandler(async (req, res) => {
       new ApiResponse(200, "Access token refreshed successfully", { user }),
     );
 });
+
+export const verifyEmailController = asyncHandler(async (req, res) => {
+  const { token } = verifyEmailSchema.parse({ token: req.params?.token });
+
+  const user = await verifyEmailService(token);
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, "User email verified successfully", { user }));
+});
+
+export const resendVerificationEmailController = asyncHandler(
+  async (req, res) => {
+    const { email } = resendVerificationEmailSchema.parse(req.body);
+    const user = await resendVerificationEmailService(email);
+
+    return res.status(200).json(
+      new ApiResponse(200, "Verification email resent successfully", {
+        user,
+      }),
+    );
+  },
+);
