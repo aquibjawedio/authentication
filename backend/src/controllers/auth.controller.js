@@ -1,6 +1,8 @@
 import { loginUserSchema, registerUserSchema } from "../schemas/auth.schema.js";
 import {
   loginUserService,
+  logoutUserService,
+  refreshAccessTokenService,
   registerUserService,
 } from "../services/auth.service.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
@@ -38,6 +40,8 @@ export const loginUserController = asyncHandler(async (req, res) => {
     logger.warn("User attempted to login while already logged in");
     throw new ApiError(400, "User is already logged in");
   }
+  const userAgent = req.get("User-Agent");
+  const ip = req.ip || req.connection.remoteAddress;
 
   const { email, password } = loginUserSchema.parse(req.body);
 
@@ -47,18 +51,17 @@ export const loginUserController = asyncHandler(async (req, res) => {
     accessTokenOptions,
     refreshToken,
     refreshTokenOptions,
-  } = await loginUserService({ email, password });
+  } = await loginUserService({ email, password, userAgent, ip });
 
   return res
     .status(201)
     .cookie("accessToken", accessToken, accessTokenOptions)
     .cookie("refreshToken", refreshToken, refreshTokenOptions)
-    .json(new ApiResponse(201, "User registered successfully", { user }));
+    .json(new ApiResponse(201, "User logged in successfully", { user }));
 });
 
 export const logoutUserController = asyncHandler(async (req, res) => {
-  const user = req.user;
-
+  const user = await logoutUserService(req.user._id, req.cookies.refreshToken);
   const cookieSettings = clearCookieOptions();
   res.clearCookie("accessToken", cookieSettings);
   res.clearCookie("refreshToken", cookieSettings);
@@ -68,4 +71,27 @@ export const logoutUserController = asyncHandler(async (req, res) => {
   return res
     .status(200)
     .json(new ApiResponse(200, "User logged out successfully", { user }));
+});
+
+export const refreshAccessTokenController = asyncHandler(async (req, res) => {
+  const refreshToken = req.cookies?.refreshToken || req.body.refreshToken;
+  if (!refreshToken) {
+    logger.warn("Refresh token missing: User unauthorized");
+    throw new ApiError(403, "Unauthorized! Refresh token is missing");
+  }
+  const {
+    user,
+    newAccessToken,
+    accessTokenOptions,
+    newRefreshToken,
+    refreshTokenOptions,
+  } = await refreshAccessTokenService(refreshToken);
+
+  res
+    .status(200)
+    .cookie("accessToken", newAccessToken, accessTokenOptions)
+    .cookie("refreshToken", newRefreshToken, refreshTokenOptions)
+    .json(
+      new ApiResponse(200, "Access token refreshed successfully", { user }),
+    );
 });

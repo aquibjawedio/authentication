@@ -8,6 +8,7 @@ import {
   sendEmail,
 } from "../utils/sendEmail.js";
 import { cookieOptions } from "../utils/jwt.js";
+import crypto from "crypto";
 
 export const registerUserService = async ({
   fullname,
@@ -82,8 +83,9 @@ export const registerUserService = async ({
   return sanitizeUser(user);
 };
 
-export const loginUserService = async ({ email, password }) => {
+export const loginUserService = async ({ email, password, userAgent, ip }) => {
   logger.info(`Login attempt: ${email}`);
+  logger.info(`userAgent :  ${userAgent}  ip - ${ip}`);
 
   const user = await User.findOne({ email });
   if (!user) {
@@ -102,17 +104,33 @@ export const loginUserService = async ({ email, password }) => {
     );
   }
 
-  const isMatchedPassword = user.isPasswordCorrect(password);
+  const isMatchedPassword = await user.isPasswordCorrect(password);
 
   if (!isMatchedPassword) {
     logger.warn(`Login failed: Incorrect password for email - ${email}`);
     throw new ApiError(401, "Invalid credentials, login failed.");
   }
 
+  const sessionId = crypto.randomBytes(16).toString("hex");
+  const deviceId = crypto.randomBytes(32).toString("hex");
+
   const accessToken = user.generateAccessToken();
   const accessTokenOptions = cookieOptions(1000 * 60 * 15);
-  const refreshToken = user.generateRefreshToken();
+  const refreshToken = user.generateRefreshToken(sessionId);
   const refreshTokenOptions = cookieOptions(1000 * 60 * 60 * 24 * 7);
+
+  user.sessions.push({
+    sessionId,
+    deviceId,
+    userAgent,
+    ip,
+    loginCount: (user.sessions[user.sessions.length - 1]?.loginCount || 0) + 1,
+    refreshToken,
+    lastLoginAt: new Date(),
+    lastUsedAt: new Date(),
+  });
+
+  await user.save();
 
   logger.info(`Login successfull: User logged in successfully - ${email}`);
 
@@ -121,6 +139,70 @@ export const loginUserService = async ({ email, password }) => {
     accessToken,
     accessTokenOptions,
     refreshToken,
+    refreshTokenOptions,
+  };
+};
+
+export const logoutUserService = async (userId, refreshToken) => {
+  const user = await User.findById(userId);
+  if (!user) {
+    logger.warn(`Logout failed : User not found with ID -${userId}`);
+    throw new ApiError(401, "User not found");
+  }
+
+  const sessionIndex = user.sessions.findIndex(
+    (session) => session.refreshToken === refreshToken,
+  );
+
+  if (sessionIndex === -1) {
+    throw new ApiError(401, "Session not found");
+  }
+
+  user.sessions.splice(sessionIndex, 1);
+  await user.save();
+
+  logger.info(`Session cleared : User session cleared for - ${user.email}`);
+  return sanitizeUser(user);
+};
+
+export const refreshAccessTokenService = async (refreshToken) => {
+  if (!refreshToken) {
+    logger.warn("Failed to refresh: Refresh token is missing ");
+    throw new ApiError(403, "Refresh token is required");
+  }
+
+  const user = await User.findOne({
+    "sessions.refreshToken": refreshToken,
+    "sessions.isRevoked": false,
+  });
+
+  const sessionIndex = user.sessions.findIndex(
+    (s) => s.refreshToken === refreshToken && !s.isRevoked,
+  );
+
+  if (sessionIndex === -1) {
+    throw new ApiError(401, "Session not found or revoked");
+  }
+  user.sessions[sessionIndex].lastUsedAt = new Date();
+
+  const sessionId = crypto.randomBytes(16).toString("hex");
+
+  const newAccessToken = user.generateAccessToken();
+  const accessTokenOptions = cookieOptions(1000 * 60 * 15);
+  const newRefreshToken = user.generateRefreshToken(sessionId);
+  const refreshTokenOptions = cookieOptions(1000 * 60 * 60 * 24 * 7);
+
+  user.sessions[sessionIndex].refreshToken = newRefreshToken;
+  user.sessions[sessionIndex].sessionId = sessionId;
+  await user.save();
+
+  logger.info(`Refresh token refreshed: Session continues for ${user.email}`);
+
+  return {
+    user: sanitizeUser(user),
+    newAccessToken,
+    accessTokenOptions,
+    newRefreshToken,
     refreshTokenOptions,
   };
 };

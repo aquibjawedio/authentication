@@ -77,6 +77,7 @@ const userSchema = new mongoose.Schema(
     sessions: [
       {
         _id: false,
+        sessionId: { type: String },
         deviceId: { type: String },
         userAgent: { type: String },
         ip: { type: String },
@@ -137,11 +138,12 @@ userSchema.methods.generateAccessToken = function () {
   );
 };
 
-userSchema.methods.generateRefreshToken = function () {
+userSchema.methods.generateRefreshToken = function (sessionId) {
   return jwt.sign(
     {
       _id: this._id,
       role: this.role,
+      sessionId,
       username: this.username,
       email: this.email,
     },
