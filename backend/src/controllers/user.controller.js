@@ -1,0 +1,16 @@
+import { getCurrentUserSchema } from "../schemas/user.schema.js";
+import { getCurrentUserService } from "../services/user.service.js";
+import { asyncHandler } from "../utils/asyncHandler.js";
+import { ApiResponse } from "../utils/ApiResponse.js";
+
+export const getCurrentUserController = asyncHandler(async (req, res) => {
+  const { username } = getCurrentUserSchema.parse({
+    username: req.params.username,
+  });
+
+  const user = await getCurrentUserService(username);
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, "User fetched successfully", { user }));
+});
