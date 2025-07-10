@@ -9,8 +9,39 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { NavLink, useNavigate } from "react-router-dom";
+
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { loginSchema } from "../schemas/authSchema";
+
+import { handleLogin } from "../api/authAPI";
+import { useSelector } from "react-redux";
 
 const LoginForm = ({ className, ...props }) => {
+  const navigate = useNavigate();
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm({ resolver: zodResolver(loginSchema) });
+
+  const isLoading = useSelector((state) => state.auth.isLoading);
+
+  const onSubmit = async (formData) => {
+    try {
+      const result = await handleLogin(formData);
+      if (result?.success) {
+        navigate("/profile");
+      } else {
+        console.warn("Login response not successful:", result);
+      }
+    } catch (error) {
+      console.log("Login error:", error);
+    }
+  };
+
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       <Card>
@@ -19,10 +50,10 @@ const LoginForm = ({ className, ...props }) => {
           <CardDescription>Continue with your Google account</CardDescription>
         </CardHeader>
         <CardContent>
-          <form>
+          <form onSubmit={handleSubmit(onSubmit)}>
             <div className="grid gap-6">
               <div className="flex flex-col gap-4">
-                <Button variant="outline" className="w-full">
+                <Button variant="outline" className="w-full cursor-pointer">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     viewBox="0 0 24 24"
@@ -39,7 +70,7 @@ const LoginForm = ({ className, ...props }) => {
 
               <div className="relative text-center text-sm after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t after:border-border">
                 <span className="bg-card text-muted-foreground relative z-10 px-2">
-                  Or continue with
+                  Or login with
                 </span>
               </div>
 
@@ -47,9 +78,9 @@ const LoginForm = ({ className, ...props }) => {
                 <div className="grid gap-3">
                   <Label htmlFor="email">Email</Label>
                   <Input
-                    id="email"
                     type="email"
-                    placeholder="m@example.com"
+                    {...register("email")}
+                    placeholder="email@example.com"
                     required
                   />
                 </div>
@@ -63,28 +94,34 @@ const LoginForm = ({ className, ...props }) => {
                       Forgot your password?
                     </a>
                   </div>
-                  <Input id="password" type="password" required />
+                  <Input type="password" {...register("password")} required />
                 </div>
-                <Button type="submit" className="w-full">
-                  Login
+
+                <Button type="submit" className="w-full cursor-pointer">
+                  {isLoading ? (
+                    <div className="flex items-center justify-center gap-2 ">
+                      <span>Signing in</span>
+                      <SpinLoader />
+                    </div>
+                  ) : (
+                    "Login"
+                  )}
                 </Button>
               </div>
 
               <div className="text-center text-sm">
                 Don&apos;t have an account?{" "}
-                <a href="#" className="underline underline-offset-4">
+                <NavLink
+                  to={"/register"}
+                  className="underline underline-offset-4"
+                >
                   Sign up
-                </a>
+                </NavLink>
               </div>
             </div>
           </form>
         </CardContent>
       </Card>
-
-      <div className="text-muted-foreground *:[a]:hover:text-primary text-center text-xs text-balance *:[a]:underline *:[a]:underline-offset-4">
-        By clicking continue, you agree to our <a href="#">Terms of Service</a>{" "}
-        and <a href="#">Privacy Policy</a>.
-      </div>
     </div>
   );
 };

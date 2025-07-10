@@ -9,8 +9,23 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { NavLink } from "react-router-dom";
+import { registerSchema } from "../schemas/authSchema";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { handleRegister } from "../api/authAPI";
 
 const RegisterForm = ({ className, ...props }) => {
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm({ resolver: zodResolver(registerSchema) });
+
+  const onSubmit = async (formData) => {
+    await handleRegister(formData);
+  };
+
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       <Card>
@@ -20,10 +35,9 @@ const RegisterForm = ({ className, ...props }) => {
         </CardHeader>
 
         <CardContent>
-          <form>
+          <form onSubmit={handleSubmit(onSubmit)}>
             <div className="grid gap-6">
-              {/* Google Login */}
-              <Button variant="outline" className="w-full">
+              <Button variant="outline" className="w-full cursor-pointer">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   viewBox="0 0 24 24"
@@ -37,17 +51,16 @@ const RegisterForm = ({ className, ...props }) => {
                 Continue with Google
               </Button>
 
-              {/* Divider */}
               <div className="relative text-center text-sm after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t after:border-border">
                 <span className="bg-card text-muted-foreground relative z-10 px-2">
                   Or register with
                 </span>
               </div>
 
-              {/* Full Name */}
               <div className="grid gap-3">
                 <Label htmlFor="fullname">Full Name</Label>
                 <Input
+                  {...register("fullname")}
                   id="fullname"
                   type="text"
                   placeholder="John Doe"
@@ -55,10 +68,10 @@ const RegisterForm = ({ className, ...props }) => {
                 />
               </div>
 
-              {/* Username */}
               <div className="grid gap-3">
                 <Label htmlFor="username">Username</Label>
                 <Input
+                  {...register("username")}
                   id="username"
                   type="text"
                   placeholder="johndoe123"
@@ -66,10 +79,10 @@ const RegisterForm = ({ className, ...props }) => {
                 />
               </div>
 
-              {/* Email */}
               <div className="grid gap-3">
                 <Label htmlFor="email">Email</Label>
                 <Input
+                  {...register("email")}
                   id="email"
                   type="email"
                   placeholder="you@example.com"
@@ -77,33 +90,30 @@ const RegisterForm = ({ className, ...props }) => {
                 />
               </div>
 
-              {/* Password */}
               <div className="grid gap-3">
                 <Label htmlFor="password">Password</Label>
-                <Input id="password" type="password" required />
+                <Input
+                  {...register("password")}
+                  id="password"
+                  type="password"
+                  required
+                />
               </div>
 
-              {/* Submit */}
-              <Button type="submit" className="w-full">
+              <Button type="submit" className="w-full cursor-pointer">
                 Register
               </Button>
 
-              {/* Login link */}
               <div className="text-center text-sm">
                 Already have an account?{" "}
-                <a href="#" className="underline underline-offset-4">
+                <NavLink to={"/login"} className="underline underline-offset-4">
                   Login
-                </a>
+                </NavLink>
               </div>
             </div>
           </form>
         </CardContent>
       </Card>
-
-      <div className="text-muted-foreground *:[a]:hover:text-primary text-center text-xs text-balance *:[a]:underline *:[a]:underline-offset-4">
-        By registering, you agree to our <a href="#">Terms of Service</a> and{" "}
-        <a href="#">Privacy Policy</a>.
-      </div>
     </div>
   );
 };

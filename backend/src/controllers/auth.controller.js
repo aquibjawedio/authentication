@@ -61,10 +61,10 @@ export const loginUserController = asyncHandler(async (req, res) => {
   } = await loginUserService({ email, password, userAgent, ip });
 
   return res
-    .status(201)
+    .status(200)
     .cookie("accessToken", accessToken, accessTokenOptions)
     .cookie("refreshToken", refreshToken, refreshTokenOptions)
-    .json(new ApiResponse(201, "User logged in successfully", { user }));
+    .json(new ApiResponse(200, "User logged in successfully", { user }));
 });
 
 export const logoutUserController = asyncHandler(async (req, res) => {

@@ -56,6 +56,7 @@ const userSchema = new mongoose.Schema(
     avatarUrl: {
       type: String,
       trim: true,
+      default: "https://placehold.co/400",
     },
     gender: {
       type: String,

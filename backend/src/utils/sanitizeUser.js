@@ -8,6 +8,7 @@ const sanitizeUser = ({
   updatedAt,
   avatarUrl,
   isEmailVerified,
+  bio,
 }) => {
   if (!_id) return null;
 
@@ -21,6 +22,7 @@ const sanitizeUser = ({
     updatedAt,
     avatarUrl,
     isEmailVerified,
+    bio,
   };
 };
 

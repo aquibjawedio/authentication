@@ -4,11 +4,11 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 
 export const getCurrentUserController = asyncHandler(async (req, res) => {
-  const { username } = getCurrentUserSchema.parse({
-    username: req.params.username,
+  const { userId } = getCurrentUserSchema.parse({
+    userId: req.user._id,
   });
 
-  const user = await getCurrentUserService(username);
+  const user = await getCurrentUserService(userId);
 
   return res
     .status(200)
