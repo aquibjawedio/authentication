@@ -14,7 +14,6 @@ import { useSelector } from "react-redux";
 const ProfilePage = () => {
   let user = useSelector((state) => state.auth.user);
   let isLoading = useSelector((state) => state.auth.isLoading);
-  console.log("User in ProfilePage: ", user);
 
   if (isLoading)
     return (

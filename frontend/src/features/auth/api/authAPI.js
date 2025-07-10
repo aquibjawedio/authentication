@@ -27,6 +27,7 @@ export const handleLogin = async (data) => {
 export const handleRegister = async (data) => {
   try {
     const response = await axiosClient.post("/auth/register", data);
+    toast.success(response.data.data.message || "User registred");
     return response.data;
   } catch (error) {
     toast(
@@ -36,6 +37,17 @@ export const handleRegister = async (data) => {
       }
     );
     throw error;
+  }
+};
+
+export const handleVerifyEmail = async (token) => {
+  try {
+    const response = await axiosClient.post(`/auth/verify-email/${token}`);
+    return { success: true, data: response.data };
+  } catch (error) {
+    const errorMessage =
+      error?.response?.data?.message || "Verification failed";
+    return { success: false, error: errorMessage, raw: error };
   }
 };
 

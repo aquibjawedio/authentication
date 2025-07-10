@@ -11,6 +11,7 @@ import { setUser } from "./features/auth/store/authSlice";
 import axiosClient from "./api/axiosClient";
 import { Toaster } from "sonner";
 import SpinLoader from "./features/shared/components/SpinLoader";
+import VerifyEmailPage from "./features/auth/pages/VerifyEmailPage";
 
 const App = () => {
   const user = useSelector((state) => state.auth.user);
@@ -46,14 +47,12 @@ const App = () => {
     <div className="dark">
       <Toaster />
       <Routes>
-        <Route
-          path="/"
-          element={ <LandingPage />}
-        />
+        <Route path="/" element={<LandingPage />} />
         <Route
           path="/register"
           element={user ? <Navigate to="/profile" replace /> : <RegisterPage />}
         />
+        <Route path="/verify-email/:token" element={<VerifyEmailPage />} />
         <Route
           path="/login"
           element={user ? <Navigate to="/profile" replace /> : <LoginPage />}

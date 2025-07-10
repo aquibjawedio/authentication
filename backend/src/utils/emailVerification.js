@@ -14,7 +14,7 @@ const sendEmailVerificationLink = async (user, email) => {
 
   logger.info(`Email verification token saved for user ID ${user._id}`);
 
-  const verificationUrl = `${env.FRONTEND_URL}/api/v1/auth/verify-email/${unHashedToken}`;
+  const verificationUrl = `${env.FRONTEND_URL}/verify-email/${unHashedToken}`;
 
   logger.info(`Sending verification link: ${verificationUrl} to: ${email}`);
   await sendEmail({

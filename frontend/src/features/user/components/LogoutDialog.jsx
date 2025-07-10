@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 
 import { useNavigate } from "react-router-dom";
 import { handleLogout } from "../api/userAPI";
+import { toast } from "sonner";
 
 const LogoutDialog = () => {
   const navigate = useNavigate();
@@ -22,7 +23,7 @@ const LogoutDialog = () => {
       await handleLogout();
       navigate("/login");
     } catch (error) {
-      console.error("Logout failed:", error);
+      toast(error.message);
     }
   };
 
