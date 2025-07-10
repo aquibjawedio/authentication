@@ -17,6 +17,7 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import { logger } from "../utils/logger.js";
 import { ApiError } from "../utils/ApiError.js";
 import { clearCookieOptions, verifyJWTRefreshToken } from "../utils/jwt.js";
+import geoip from "geoip-lite";
 
 export const registerUserController = asyncHandler(async (req, res) => {
   const { fullname, username, email, password } = registerUserSchema.parse(
@@ -48,7 +49,13 @@ export const loginUserController = asyncHandler(async (req, res) => {
     throw new ApiError(400, "User is already logged in");
   }
   const userAgent = req.get("User-Agent");
-  const ip = req.ip || req.connection.remoteAddress;
+  const parseIp =
+    req.headers["x-forwarded-for"]?.split(",").shift() ||
+    req.socket?.remoteAddress;
+
+  const ip = geoip.lookup(parseIp);
+
+  logger.info(`Attemp to get GeoIP: Getting geoIP:  - ${ip}`);
 
   const { email, password } = loginUserSchema.parse(req.body);
 

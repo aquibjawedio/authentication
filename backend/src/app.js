@@ -13,6 +13,7 @@ import { userRouter } from "./routes/user.route.js";
 
 const app = express();
 
+app.set('trust proxy', true);
 app.use(
   cors({
     origin: env.FRONTEND_URL,
